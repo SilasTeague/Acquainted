@@ -3,4 +3,4 @@ frontend/.next/
 frontend/.env.local
 backend/__pycache__/
 backend/.env
-    
+info.md
