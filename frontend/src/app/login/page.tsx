@@ -1,31 +1,77 @@
 'use client';
-import { supabase } from '@/lib/supabaseClient';
-import { useRouter } from 'next/navigation';
+
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabaseClient';
+import './styles.css';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
+
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
 
-  const login = async () => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (!error) router.push('/dashboard');
-    else alert(error.message);
-  };
+  const handleLogin = async () => {
+    setErrorMsg('');
 
-  const signup = async () => {
-    const { error } = await supabase.auth.signUp({ email, password });
-    if (!error) router.push('/dashboard');
-    else alert(error.message);
+    if (!identifier.trim() || !password) {
+      setErrorMsg('Please enter both your username/email and password.');
+      return;
+    }
+
+    let emailToUse = identifier.trim();
+
+    // If the identifier is not an email, treat it as a username and look it up
+    if (!emailToUse.includes('@')) {
+      const { data: profile, error: lookupError } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('username', emailToUse)
+        .single();
+
+      if (lookupError || !profile?.email) {
+        setErrorMsg('No account found with that username.');
+        return;
+      }
+
+      emailToUse = profile.email;
+    }
+
+    const { error: loginError } = await supabase.auth.signInWithPassword({
+      email: emailToUse,
+      password,
+    });
+
+    if (loginError) {
+      setErrorMsg('Incorrect email/username or password.');
+      return;
+    }
+
+    router.push('/dashboard');
   };
 
   return (
-    <div>
-      <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" />
-      <input value={password} onChange={e => setPassword(e.target.value)} type="password" placeholder="Password" />
-      <button onClick={login}>Login</button>
-      <button onClick={signup}>Sign Up</button>
+    <div className="auth-container">
+      <h2>Log In</h2>
+      <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }}>
+        <input
+          type="text"
+          placeholder="Username or Email"
+          required
+          value={identifier}
+          onChange={(e) => setIdentifier(e.target.value)}
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+        <button type="submit">Log In</button>
+        {errorMsg && <p className="error">{errorMsg}</p>}
+      </form>
     </div>
   );
 }
