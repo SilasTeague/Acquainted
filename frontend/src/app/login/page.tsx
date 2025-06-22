@@ -8,46 +8,30 @@ import './styles.css';
 export default function LoginPage() {
   const router = useRouter();
 
-  const [identifier, setIdentifier] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
   const handleLogin = async () => {
     setErrorMsg('');
 
-    if (!identifier.trim() || !password) {
-      setErrorMsg('Please enter both your username/email and password.');
+    if (!email.trim() || !password) {
+      setErrorMsg('Please enter both email and password.');
       return;
     }
 
-    let emailToUse = identifier.trim();
-
-    // If the identifier is not an email, treat it as a username and look it up
-    if (!emailToUse.includes('@')) {
-      const { data: profile, error: lookupError } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('username', emailToUse)
-        .single();
-
-      if (lookupError || !profile?.email) {
-        setErrorMsg('No account found with that username.');
-        return;
-      }
-
-      emailToUse = profile.email;
-    }
-
-    const { error: loginError } = await supabase.auth.signInWithPassword({
-      email: emailToUse,
+    // Sign in
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
       password,
     });
 
-    if (loginError) {
-      setErrorMsg('Incorrect email/username or password.');
+    if (error) {
+      setErrorMsg('Incorrect email or password.');
       return;
     }
 
+    // Success
     router.push('/dashboard');
   };
 
@@ -56,11 +40,11 @@ export default function LoginPage() {
       <h2>Log In</h2>
       <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }}>
         <input
-          type="text"
-          placeholder="Username or Email"
+          type="email"
+          placeholder="Email"
           required
-          value={identifier}
-          onChange={(e) => setIdentifier(e.target.value)}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
         />
         <input
           type="password"
