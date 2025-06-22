@@ -9,7 +9,7 @@ interface Contact {
     favorites: Record<string, string>;
 }
 
-export default async function ContactPage({ params }: { params: { id: string } }) {
+export default async function ContactPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
 
     const { data, error } = await supabase
