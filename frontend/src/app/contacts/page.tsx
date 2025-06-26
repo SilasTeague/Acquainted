@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import Link from 'next/link';
 
@@ -15,6 +16,7 @@ export default function ContactsPage() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const router = useRouter();
 
   useEffect(() => {
     const fetchContacts = async () => {
@@ -25,8 +27,7 @@ export default function ContactsPage() {
       const user = sessionData.session?.user;
 
       if (!user) {
-        setError('You must be logged in to view contacts.');
-        setLoading(false);
+        router.push('/login');
         return;
       }
 
