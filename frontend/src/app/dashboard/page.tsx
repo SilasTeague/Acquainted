@@ -35,7 +35,7 @@ export default function Dashboard() {
     router.push('/login');
   };
 
-  if (loading) return <div className="dashboard">Loading your dashboard...</div>;
+  if (loading) return <div className="dashboard">Loading...</div>;
 
   return (
     <div className="dashboard">
