@@ -28,6 +28,7 @@
   border-radius: 8px;
   cursor: pointer;
   font-size: 1rem;
+  margin: 0.5rem;
 }
 
 .dashboard button:hover {

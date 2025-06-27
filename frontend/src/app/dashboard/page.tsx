@@ -41,6 +41,7 @@ export default function Dashboard() {
     <div className="dashboard">
       <h1>Welcome, @{displayName}!</h1>
       <p>Email: {email}</p>
+      <button onClick={() => router.push('/contacts')}>Contacts</button>
       <button onClick={handleLogout}>Log Out</button>
     </div>
   );
