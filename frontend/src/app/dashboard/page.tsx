@@ -277,6 +277,32 @@ export default function Dashboard() {
             </div>
           </div>
 
+          {/* Quick Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div className="bg-green-50 rounded-lg p-4">
+              <div className="text-2xl font-bold text-green-600">{contacts.length}</div>
+              <div className="text-sm text-green-700">Total Contacts</div>
+            </div>
+            <div className="bg-blue-50 rounded-lg p-4">
+              <div className="text-2xl font-bold text-blue-600">
+                {contacts.filter(contact => {
+                  if (!contact.birthday) return false;
+                  const today = new Date();
+                  const thirtyDaysFromNow = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+                  const birthday = new Date(contact.birthday);
+                  const nextBirthday = new Date(today.getFullYear(), birthday.getMonth(), birthday.getDate());
+                  
+                  if (nextBirthday < today) {
+                    nextBirthday.setFullYear(today.getFullYear() + 1);
+                  }
+                  
+                  return nextBirthday <= thirtyDaysFromNow;
+                }).length}
+              </div>
+              <div className="text-sm text-blue-700">Upcoming Birthdays</div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Calendar */}
             <div className="lg:col-span-2">
