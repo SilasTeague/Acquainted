@@ -117,24 +117,27 @@ export default function Dashboard() {
           const birthday = new Date(contact.birthday! + 'T00:00:00');
           const today = new Date();
           const currentYear = today.getFullYear();
+          const birthYear = birthday.getFullYear();
           
-          // Calculate next birthday for current year
-          let nextBirthday = new Date(currentYear, birthday.getMonth(), birthday.getDate());
+          // Create birthday events from birth year to current year + 5 years into future
+          const birthdays = [];
+          const endYear = currentYear + 5; // Show 5 years into the future
           
-          // If birthday has already passed this year, set it for next year
-          if (nextBirthday < today) {
-            nextBirthday = new Date(currentYear + 1, birthday.getMonth(), birthday.getDate());
+          for (let year = birthYear; year <= endYear; year++) {
+            const birthdayDate = new Date(year, birthday.getMonth(), birthday.getDate());
+            birthdays.push({
+              id: `birthday-${contact.id}-${year}`,
+              title: `${contact.first_name}'s Birthday`,
+              date: birthdayDate.toISOString().split('T')[0],
+              contact_id: contact.id,
+              contact_name: `${contact.first_name} ${contact.middle_name || ''} ${contact.last_name || ''}`.trim(),
+              type: 'birthday' as const
+            });
           }
           
-          return {
-            id: `birthday-${contact.id}`,
-            title: `${contact.first_name}'s Birthday`,
-            date: nextBirthday.toISOString().split('T')[0], // Format as YYYY-MM-DD
-            contact_id: contact.id,
-            contact_name: `${contact.first_name} ${contact.middle_name || ''} ${contact.last_name || ''}`.trim(),
-            type: 'birthday' as const
-          };
-        });
+          return birthdays;
+        })
+        .flat(); // Flatten the array of birthday arrays
 
       const allEvents = [
         ...(customEvents || []).map((event) => ({
