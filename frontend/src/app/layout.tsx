@@ -3,8 +3,8 @@ import './globals.css';
 import Header from '@/components/Header';
 
 export const metadata = {
-  title: 'Your App',
-  description: 'Your app description',
+  title: 'Acquainted - Relationship Intelligence Assistant',
+  description: 'Manage your relationships and never miss important dates',
 };
 
 export default function RootLayout({

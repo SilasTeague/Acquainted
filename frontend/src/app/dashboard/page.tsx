@@ -116,15 +116,15 @@ export default function Dashboard() {
         }));
 
       const allEvents = [
-        ...(customEvents || []).map((event: any) => ({
+        ...(customEvents || []).map((event) => ({
           id: event.id,
           title: event.title,
           date: event.date,
           contact_id: event.contact_id,
           description: event.description || undefined,
           type: event.type as 'birthday' | 'anniversary' | 'custom',
-          contact_name: event.contacts ? 
-            `${event.contacts.first_name} ${event.contacts.middle_name || ''} ${event.contacts.last_name || ''}`.trim() : 
+          contact_name: (event as unknown as { contacts?: { first_name: string; middle_name: string | null; last_name: string | null } }).contacts ? 
+            `${(event as unknown as { contacts?: { first_name: string; middle_name: string | null; last_name: string | null } }).contacts!.first_name} ${(event as unknown as { contacts?: { first_name: string; middle_name: string | null; last_name: string | null } }).contacts!.middle_name || ''} ${(event as unknown as { contacts?: { first_name: string; middle_name: string | null; last_name: string | null } }).contacts!.last_name || ''}`.trim() : 
             undefined
         })),
         ...birthdayEvents
@@ -364,7 +364,7 @@ export default function Dashboard() {
 
       {/* Event Creation Modal */}
       {showEventForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <h3 className="text-lg font-semibold mb-4">Create New Event</h3>
             <form onSubmit={handleCreateEvent} className="space-y-4">
