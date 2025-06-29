@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import Calendar from '@/components/Calendar';
@@ -34,6 +34,7 @@ export default function Dashboard() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [showEventForm, setShowEventForm] = useState(false);
   const [eventError, setEventError] = useState('');
+  const [contactSearchQuery, setContactSearchQuery] = useState('');
   const [newEvent, setNewEvent] = useState({
     title: '',
     date: format(new Date(), 'yyyy-MM-dd'),
@@ -211,6 +212,20 @@ export default function Dashboard() {
     return events.filter(event => isSameDay(parseISO(event.date), date));
   };
 
+  // Filter contacts for event creation dropdown
+  const filteredContacts = useMemo(() => {
+    if (!contactSearchQuery.trim()) {
+      return contacts;
+    }
+
+    const query = contactSearchQuery.toLowerCase().trim();
+    
+    return contacts.filter(contact => {
+      const fullName = `${contact.first_name} ${contact.middle_name || ''} ${contact.last_name || ''}`.toLowerCase();
+      return fullName.includes(query);
+    });
+  }, [contacts, contactSearchQuery]);
+
   const tileContent = ({ date }: { date: Date }) => {
     const dayEvents = getEventsForDate(date);
     if (dayEvents.length === 0) return null;
@@ -348,12 +363,28 @@ export default function Dashboard() {
                 className="w-full border rounded-lg px-3 py-2"
               >
                 <option value="">No contact (optional)</option>
-                {contacts.map(contact => (
+                {filteredContacts.map(contact => (
                   <option key={contact.id} value={contact.id}>
                     {contact.first_name} {contact.middle_name || ''} {contact.last_name || ''}
                   </option>
                 ))}
               </select>
+              {contacts.length > 5 && (
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search contacts..."
+                    value={contactSearchQuery}
+                    onChange={(e) => setContactSearchQuery(e.target.value)}
+                    className="w-full border rounded-lg px-3 py-2 pl-8 text-sm"
+                  />
+                  <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                    <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                </div>
+              )}
               <textarea
                 placeholder="Description (optional)"
                 value={newEvent.description}

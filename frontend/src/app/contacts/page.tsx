@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import Link from 'next/link';
@@ -10,12 +10,15 @@ interface Contact {
   first_name: string;
   middle_name: string | null;
   last_name: string | null;
+  birthday: string | null;
+  favorites: Record<string, string>;
 }
 
 export default function ContactsPage() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const router = useRouter();
 
   useEffect(() => {
@@ -33,7 +36,7 @@ export default function ContactsPage() {
 
       const { data, error: fetchError } = await supabase
         .from('contacts')
-        .select('id, first_name, middle_name, last_name')
+        .select('id, first_name, middle_name, last_name, birthday, favorites')
         .eq('owner_id', user.id)
         .order('first_name', { ascending: true });
 
@@ -48,6 +51,59 @@ export default function ContactsPage() {
 
     fetchContacts();
   }, []);
+
+  // Filter contacts based on search query
+  const filteredContacts = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return contacts;
+    }
+
+    const query = searchQuery.toLowerCase().trim();
+    
+    return contacts.filter(contact => {
+      // Search in name
+      const fullName = `${contact.first_name} ${contact.middle_name || ''} ${contact.last_name || ''}`.toLowerCase();
+      if (fullName.includes(query)) {
+        return true;
+      }
+
+      // Search in individual name parts
+      if (contact.first_name.toLowerCase().includes(query) ||
+          (contact.middle_name && contact.middle_name.toLowerCase().includes(query)) ||
+          (contact.last_name && contact.last_name.toLowerCase().includes(query))) {
+        return true;
+      }
+
+      // Search in favorites
+      if (contact.favorites) {
+        const favoritesText = Object.entries(contact.favorites)
+          .map(([key, value]) => `${key} ${value}`)
+          .join(' ')
+          .toLowerCase();
+        if (favoritesText.includes(query)) {
+          return true;
+        }
+      }
+
+      return false;
+    });
+  }, [contacts, searchQuery]);
+
+  // Highlight search terms in text
+  const highlightText = (text: string, query: string) => {
+    if (!query.trim()) return text;
+    
+    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    const parts = text.split(regex);
+    
+    return parts.map((part, index) => 
+      regex.test(part) ? (
+        <mark key={index} className="bg-yellow-200 px-1 rounded">
+          {part}
+        </mark>
+      ) : part
+    );
+  };
 
   if (loading) {
     return (
@@ -82,21 +138,37 @@ export default function ContactsPage() {
             </Link>
           </div>
 
-          {/* Search placeholder */}
+          {/* Search functionality */}
           <div className="mb-6">
             <div className="relative">
               <input
                 type="text"
-                placeholder="Search contacts..."
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 pl-10 bg-gray-50 text-gray-500"
-                disabled
+                placeholder="Search contacts by name, favorites, or any detail..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 pl-10 focus:ring-2 focus:ring-green-500 focus:border-transparent"
               />
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </div>
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
             </div>
+            {searchQuery && (
+              <p className="text-sm text-gray-500 mt-2">
+                Found {filteredContacts.length} contact{filteredContacts.length !== 1 ? 's' : ''} matching "{searchQuery}"
+              </p>
+            )}
           </div>
 
           {contacts.length === 0 ? (
@@ -115,9 +187,25 @@ export default function ContactsPage() {
                 Add Your First Contact
               </Link>
             </div>
+          ) : filteredContacts.length === 0 && searchQuery ? (
+            <div className="text-center py-12">
+              <div className="text-gray-400 mb-4">
+                <svg className="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No matches found</h3>
+              <p className="text-gray-500 mb-4">Try searching with different keywords or check your spelling.</p>
+              <button
+                onClick={() => setSearchQuery('')}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+              >
+                Clear Search
+              </button>
+            </div>
           ) : (
             <div className="grid gap-4">
-              {contacts.map((contact) => {
+              {filteredContacts.map((contact) => {
                 const fullName = `${contact.first_name} ${contact.middle_name || ''} ${contact.last_name || ''}`.trim();
                 return (
                   <Link
@@ -126,11 +214,27 @@ export default function ContactsPage() {
                     className="block bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors border border-gray-200"
                   >
                     <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-medium text-gray-900">{fullName}</h3>
+                      <div className="flex-1">
+                        <h3 className="font-medium text-gray-900">
+                          {searchQuery ? highlightText(fullName, searchQuery) : fullName}
+                        </h3>
                         <p className="text-sm text-gray-500">Click to view details and notes</p>
+                        {contact.favorites && Object.keys(contact.favorites).length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {Object.entries(contact.favorites).slice(0, 3).map(([key, value]) => (
+                              <span key={key} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                                {searchQuery ? highlightText(key, searchQuery) : key}: {searchQuery ? highlightText(value, searchQuery) : value}
+                              </span>
+                            ))}
+                            {Object.keys(contact.favorites).length > 3 && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-600">
+                                +{Object.keys(contact.favorites).length - 3} more
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
-                      <div className="text-gray-400">
+                      <div className="text-gray-400 ml-4">
                         <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
