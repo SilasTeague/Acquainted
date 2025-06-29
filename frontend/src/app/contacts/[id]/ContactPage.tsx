@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import NotesSection from '@/components/NotesSection';
+import EditContactModal from '@/components/EditContactModal';
 import { format } from 'date-fns';
 
 interface Contact {
@@ -15,31 +17,58 @@ interface Contact {
 }
 
 export default function ContactPage({ id }: { id: string | undefined }) {
+  const router = useRouter();
   const [contact, setContact] = useState<Contact | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
-  useEffect(() => {
+  const fetchContact = async () => {
     if (!id) {
       setError('Missing contact ID.');
       return;
     }
 
-    const fetchContact = async () => {
-      const { data, error } = await supabase
-        .from('contacts')
-        .select('*')
-        .eq('id', id)
-        .single();
+    const { data, error } = await supabase
+      .from('contacts')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-      if (error || !data) {
-        setError(error?.message ?? 'Contact not found.');
-      } else {
-        setContact(data);
-      }
-    };
+    if (error || !data) {
+      setError(error?.message ?? 'Contact not found.');
+    } else {
+      setContact(data);
+    }
+  };
 
+  useEffect(() => {
     fetchContact();
   }, [id]);
+
+  const handleContactUpdate = () => {
+    fetchContact();
+  };
+
+  const handleDeleteContact = async () => {
+    if (!contact || !confirm('Are you sure you want to delete this contact? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('contacts')
+        .delete()
+        .eq('id', contact.id);
+
+      if (error) {
+        setError(error.message);
+      } else {
+        router.push('/contacts');
+      }
+    } catch (err) {
+      setError('Failed to delete contact.');
+    }
+  };
 
   if (error) return <div className="p-4 text-red-500">Error: {error}</div>;
   if (!contact) return <div className="p-4">Loading contact...</div>;
@@ -61,8 +90,17 @@ export default function ContactPage({ id }: { id: string | undefined }) {
               )}
             </div>
             <div className="flex gap-3">
-              <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+              <button 
+                onClick={() => setShowEditModal(true)}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+              >
                 Edit Contact
+              </button>
+              <button 
+                onClick={handleDeleteContact}
+                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Delete Contact
               </button>
             </div>
           </div>
@@ -88,6 +126,16 @@ export default function ContactPage({ id }: { id: string | undefined }) {
           <NotesSection contactId={contact.id} />
         </div>
       </div>
+
+      {/* Edit Contact Modal */}
+      {contact && (
+        <EditContactModal
+          contact={contact}
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          onUpdate={handleContactUpdate}
+        />
+      )}
     </div>
   );
 }
