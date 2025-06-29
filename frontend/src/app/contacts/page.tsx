@@ -417,7 +417,7 @@ export default function ContactsPage() {
                             {/* Contact Details */}
                             {contact.birthday && (
                               <p className="text-sm text-gray-600 mt-1">
-                                🎂 {format(new Date(new Date(contact.birthday).getTime() + 24 * 60 * 60 * 1000), 'MMM d')}
+                                🎂 {format(new Date(contact.birthday + 'T00:00:00'), 'MMM d')}
                               </p>
                             )}
                             

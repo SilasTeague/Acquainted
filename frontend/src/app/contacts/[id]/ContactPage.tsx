@@ -85,7 +85,7 @@ export default function ContactPage({ id }: { id: string | undefined }) {
               <h1 className="text-3xl font-bold text-gray-900">{fullName}</h1>
               {contact.birthday && (
                 <p className="text-gray-600 mt-1">
-                  Birthday: {format(new Date(contact.birthday), 'MMMM d, yyyy')}
+                  🎂 Birthday: {format(new Date(contact.birthday + 'T00:00:00'), 'MMMM d')}
                 </p>
               )}
             </div>

@@ -56,14 +56,14 @@ export default function Calendar({ value, onChange, tileContent }: CalendarProps
             <div
               key={day.toISOString()}
               className={`
-                relative p-2 text-center cursor-pointer border rounded
-                ${isSelected ? 'bg-green-600 text-white' : ''}
-                ${!isCurrentMonth ? 'text-gray-300' : 'hover:bg-gray-100'}
-                ${isCurrentMonth && !isSelected ? 'text-gray-900' : ''}
+                relative p-2 text-center cursor-pointer border rounded transition-colors
+                ${isSelected ? 'bg-green-600 text-white border-green-600' : ''}
+                ${!isCurrentMonth ? 'text-gray-300' : 'hover:bg-gray-100 hover:border-gray-300'}
+                ${isCurrentMonth && !isSelected ? 'text-gray-900 border-gray-200' : ''}
               `}
               onClick={() => onChange(day)}
             >
-              <span>{format(day, 'd')}</span>
+              <span className="relative z-10">{format(day, 'd')}</span>
               {tileContent && tileContent({ date: day })}
             </div>
           );

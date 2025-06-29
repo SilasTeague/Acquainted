@@ -66,6 +66,13 @@ export default function Dashboard() {
     fetchContacts();
   }, []);
 
+  // Refresh events when contacts change (for new birthdays)
+  useEffect(() => {
+    if (contacts.length > 0) {
+      fetchEvents();
+    }
+  }, [contacts.length]);
+
   const fetchEvents = async () => {
     const { data: sessionData } = await supabase.auth.getSession();
     const user = sessionData.session?.user;
@@ -106,14 +113,28 @@ export default function Dashboard() {
 
       const birthdayEvents: Event[] = (contacts || [])
         .filter(contact => contact.birthday)
-        .map(contact => ({
-          id: `birthday-${contact.id}`,
-          title: `${contact.first_name}'s Birthday`,
-          date: contact.birthday!,
-          contact_id: contact.id,
-          contact_name: `${contact.first_name} ${contact.middle_name || ''} ${contact.last_name || ''}`.trim(),
-          type: 'birthday' as const
-        }));
+        .map(contact => {
+          const birthday = new Date(contact.birthday! + 'T00:00:00');
+          const today = new Date();
+          const currentYear = today.getFullYear();
+          
+          // Calculate next birthday for current year
+          let nextBirthday = new Date(currentYear, birthday.getMonth(), birthday.getDate());
+          
+          // If birthday has already passed this year, set it for next year
+          if (nextBirthday < today) {
+            nextBirthday = new Date(currentYear + 1, birthday.getMonth(), birthday.getDate());
+          }
+          
+          return {
+            id: `birthday-${contact.id}`,
+            title: `${contact.first_name}'s Birthday`,
+            date: nextBirthday.toISOString().split('T')[0], // Format as YYYY-MM-DD
+            contact_id: contact.id,
+            contact_name: `${contact.first_name} ${contact.middle_name || ''} ${contact.last_name || ''}`.trim(),
+            type: 'birthday' as const
+          };
+        });
 
       const allEvents = [
         ...(customEvents || []).map((event) => ({
@@ -230,20 +251,36 @@ export default function Dashboard() {
     const dayEvents = getEventsForDate(date);
     if (dayEvents.length === 0) return null;
 
+    const birthdays = dayEvents.filter(event => event.type === 'birthday');
+    const otherEvents = dayEvents.filter(event => event.type !== 'birthday');
+
     return (
       <div className="absolute bottom-1 left-1 right-1">
         <div className="flex flex-wrap gap-1">
-          {dayEvents.slice(0, 2).map((event, index) => (
+          {/* Show birthdays first with pink indicators */}
+          {birthdays.slice(0, 2).map((event, index) => (
             <div
               key={`${event.id}-${index}`}
-              className={`w-2 h-2 rounded-full ${
-                event.type === 'birthday' ? 'bg-pink-400' : 'bg-green-400'
-              }`}
+              className="w-2 h-2 rounded-full bg-pink-400"
+              title={`🎂 ${event.title}`}
+            />
+          ))}
+          
+          {/* Show other events with green indicators */}
+          {otherEvents.slice(0, 2 - birthdays.length).map((event, index) => (
+            <div
+              key={`${event.id}-${index}`}
+              className="w-2 h-2 rounded-full bg-green-400"
               title={event.title}
             />
           ))}
+          
+          {/* Show "more" indicator if there are additional events */}
           {dayEvents.length > 2 && (
-            <div className="w-2 h-2 rounded-full bg-gray-400" title={`${dayEvents.length - 2} more events`} />
+            <div 
+              className="w-2 h-2 rounded-full bg-gray-400" 
+              title={`${dayEvents.length - 2} more events`} 
+            />
           )}
         </div>
       </div>
@@ -308,7 +345,12 @@ export default function Dashboard() {
             <div className="lg:col-span-2">
               <div className="bg-white rounded-lg border p-4">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-semibold text-gray-900">Calendar</h2>
+                  <div>
+                    <h2 className="text-xl font-semibold text-gray-900">Calendar</h2>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Birthdays from your contacts are automatically included 🎂
+                    </p>
+                  </div>
                   <button
                     onClick={() => setShowEventForm(true)}
                     className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 transition-colors"
@@ -334,23 +376,30 @@ export default function Dashboard() {
                   <p className="text-gray-500 text-sm">No events scheduled</p>
                 ) : (
                   getEventsForDate(selectedDate).map((event) => (
-                    <div key={event.id} className="p-3 bg-gray-50 rounded-lg">
+                    <div key={event.id} className={`p-3 rounded-lg ${
+                      event.type === 'birthday' ? 'bg-pink-50 border border-pink-200' : 'bg-gray-50'
+                    }`}>
                       <div className="flex items-start justify-between">
-                        <div>
-                          <h4 className="font-medium text-gray-900">{event.title}</h4>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            {event.type === 'birthday' && (
+                              <span className="text-pink-600">🎂</span>
+                            )}
+                            <h4 className="font-medium text-gray-900">{event.title}</h4>
+                          </div>
                           {event.contact_name && (
-                            <p className="text-sm text-gray-600">Related to: {event.contact_name}</p>
+                            <p className="text-sm text-gray-600 mt-1">Related to: {event.contact_name}</p>
                           )}
                           {event.description && (
                             <p className="text-sm text-gray-600 mt-1">{event.description}</p>
                           )}
                         </div>
-                        <span className={`px-2 py-1 rounded-full text-xs ${
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                           event.type === 'birthday' 
                             ? 'bg-pink-100 text-pink-800' 
                             : 'bg-green-100 text-green-800'
                         }`}>
-                          {event.type}
+                          {event.type === 'birthday' ? 'Birthday' : event.type}
                         </span>
                       </div>
                     </div>
