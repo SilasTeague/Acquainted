@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import NotesSection from '@/components/NotesSection';
@@ -22,7 +22,7 @@ export default function ContactPage({ id }: { id: string | undefined }) {
   const [error, setError] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
 
-  const fetchContact = async () => {
+  const fetchContact = useCallback(async () => {
     if (!id) {
       setError('Missing contact ID.');
       return;
@@ -39,11 +39,11 @@ export default function ContactPage({ id }: { id: string | undefined }) {
     } else {
       setContact(data);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     fetchContact();
-  }, [id]);
+  }, [fetchContact]);
 
   const handleContactUpdate = () => {
     fetchContact();
@@ -65,7 +65,7 @@ export default function ContactPage({ id }: { id: string | undefined }) {
       } else {
         router.push('/contacts');
       }
-    } catch (err) {
+    } catch {
       setError('Failed to delete contact.');
     }
   };

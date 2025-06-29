@@ -131,8 +131,8 @@ export default function Dashboard() {
       ];
 
       setEvents(allEvents);
-    } catch (error) {
-      console.error('Error in fetchEvents:', error);
+    } catch {
+      console.error('Error in fetchEvents');
     }
   };
 
@@ -154,8 +154,8 @@ export default function Dashboard() {
       }
 
       setContacts(data || []);
-    } catch (error) {
-      console.error('Error in fetchContacts:', error);
+    } catch {
+      console.error('Error in fetchContacts');
     }
   };
 
@@ -202,8 +202,8 @@ export default function Dashboard() {
         type: 'custom'
       });
       await fetchEvents();
-    } catch (error) {
-      console.error('Error in handleCreateEvent:', error);
+    } catch {
+      console.error('Error in handleCreateEvent');
       setEventError('An unexpected error occurred. Please try again.');
     }
   };

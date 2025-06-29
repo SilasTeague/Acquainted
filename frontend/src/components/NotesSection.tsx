@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { format } from 'date-fns';
 
@@ -23,11 +23,7 @@ export default function NotesSection({ contactId }: NotesSectionProps) {
   const [newNote, setNewNote] = useState({ title: '', content: '' });
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    fetchNotes();
-  }, [contactId]);
-
-  const fetchNotes = async () => {
+  const fetchNotes = useCallback(async () => {
     setLoading(true);
     setError('');
 
@@ -57,7 +53,11 @@ export default function NotesSection({ contactId }: NotesSectionProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [contactId]);
+
+  useEffect(() => {
+    fetchNotes();
+  }, [fetchNotes]);
 
   const handleCreateNote = async (e: React.FormEvent) => {
     e.preventDefault();

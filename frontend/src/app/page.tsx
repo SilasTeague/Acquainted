@@ -18,8 +18,8 @@ export default function Home() {
         } else {
           router.replace('/login');
         }
-      } catch (error) {
-        console.error('Auth check failed:', error);
+      } catch {
+        console.error('Auth check failed');
         router.replace('/login');
       } finally {
         setIsLoading(false);

@@ -60,7 +60,7 @@ export default function ContactsPage() {
     };
 
     fetchContacts();
-  }, []);
+  }, [router]);
 
   // Filter contacts based on search query
   const filteredContacts = useMemo(() => {
