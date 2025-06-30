@@ -66,9 +66,6 @@ acquainted/
 │   │   └── lib/            # Utilities and configurations
 │   ├── public/             # Static assets
 │   └── package.json
-├── backend/                # Future backend services
-├── infra/                  # Infrastructure as code
-└── docs/                   # Documentation
 ```
 
 ## 🐛 Known Issues
